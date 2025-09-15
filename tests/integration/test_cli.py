@@ -40,6 +40,14 @@ class TestCLIIntegration:
         assert ".md" in result.output
         assert ".docx" in result.output
 
+    def test_no_arguments_shows_help(self):
+        """Test CLI with no arguments shows help."""
+        result = self.runner.invoke(main, [])
+        assert result.exit_code == 0
+        assert "Usage: main [OPTIONS] [INPUT_FILE]" in result.output
+        assert "Convert files between different document formats" in result.output
+        assert "--help" in result.output
+
     def test_missing_input_file(self):
         """Test CLI with missing input file."""
         result = self.runner.invoke(main, ['nonexistent.pdf'])

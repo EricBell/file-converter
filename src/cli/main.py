@@ -61,8 +61,9 @@ def main(input_file: Optional[Path], output: Optional[Path], output_format: Opti
 
     # Check if input file is provided when not listing formats
     if input_file is None:
-        click.echo("Error: INPUT_FILE is required when not using --list-formats", err=True)
-        sys.exit(1)
+        ctx = click.get_current_context()
+        click.echo(ctx.get_help())
+        ctx.exit()
 
     # Validate input file
     input_ext = detect_format_from_extension(input_file)
