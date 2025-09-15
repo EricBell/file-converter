@@ -23,7 +23,7 @@ def generate_output_path(input_path: Path, output_format: str) -> Path:
 
 
 @click.command()
-@click.argument('input_file', type=click.Path(exists=True, path_type=Path))
+@click.argument('input_file', type=click.Path(exists=True, path_type=Path), required=False)
 @click.option('-o', '--output', type=click.Path(path_type=Path),
               help='Output file path. If not provided, auto-generates '
                    'based on input filename and target format')
@@ -36,7 +36,7 @@ def generate_output_path(input_path: Path, output_format: str) -> Path:
 @click.option('--list-formats', is_flag=True,
               help='List supported input and output formats')
 @click.version_option(version='2.0.0')
-def main(input_file: Path, output: Optional[Path], output_format: Optional[str],
+def main(input_file: Optional[Path], output: Optional[Path], output_format: Optional[str],
          overwrite: bool, list_formats: bool):
     """
     Convert files between different document formats.
@@ -58,6 +58,11 @@ def main(input_file: Path, output: Optional[Path], output_format: Optional[str],
         for fmt in sorted(ConverterFactory.get_supported_output_formats()):
             click.echo(f"  {fmt}")
         return
+
+    # Check if input file is provided when not listing formats
+    if input_file is None:
+        click.echo("Error: INPUT_FILE is required when not using --list-formats", err=True)
+        sys.exit(1)
 
     # Validate input file
     input_ext = detect_format_from_extension(input_file)

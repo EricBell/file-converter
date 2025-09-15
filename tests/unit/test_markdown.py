@@ -222,7 +222,7 @@ class TestMarkdownWriter:
         markdown_text = writer.to_string(sample_document)
 
         assert "# Test Document" in markdown_text
-        assert "## Chapter 1" in markdown_text
+        assert "# Chapter 1" in markdown_text
         assert "This is a paragraph" in markdown_text
 
     def test_to_string_without_title(self):

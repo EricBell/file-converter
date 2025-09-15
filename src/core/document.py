@@ -25,9 +25,9 @@ class ElementType(Enum):
 @dataclass
 class DocumentElement(ABC):
     """Base class for all document elements."""
-    element_type: ElementType
     content: str = ""
     attributes: dict = None
+    element_type: ElementType = None
 
     def __post_init__(self):
         if self.attributes is None:
@@ -55,7 +55,7 @@ class Paragraph(DocumentElement):
 
 
 @dataclass
-class List(DocumentElement):
+class DocumentList(DocumentElement):
     """Represents a list element."""
     ordered: bool = False
     items: List["ListItem"] = None
@@ -173,9 +173,9 @@ class Document:
         self.add_element(paragraph)
         return paragraph
 
-    def add_list(self, items: List[str], ordered: bool = False) -> List:
+    def add_list(self, items: List[str], ordered: bool = False) -> DocumentList:
         """Add a list element with items."""
-        list_element = List(ordered=ordered)
+        list_element = DocumentList(ordered=ordered)
         for item_text in items:
             list_item = ListItem(content=item_text)
             list_element.items.append(list_item)

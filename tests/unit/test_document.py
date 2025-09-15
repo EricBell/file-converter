@@ -4,7 +4,7 @@ Unit tests for the Document model.
 
 import pytest
 from src.core.document import (
-    Document, ElementType, Heading, Paragraph, List, ListItem,
+    Document, ElementType, Heading, Paragraph, DocumentList, ListItem,
     CodeBlock, InlineCode, Bold, Italic, Link, Image
 )
 
@@ -28,7 +28,7 @@ class TestDocumentElements:
 
     def test_list_creation(self):
         """Test list element creation."""
-        list_element = List(ordered=True)
+        list_element = DocumentList(ordered=True)
         assert list_element.element_type == ElementType.LIST
         assert list_element.ordered is True
         assert list_element.attributes["ordered"] is True
@@ -150,7 +150,7 @@ class TestDocument:
         doc = Document()
         list_element = doc.add_list(["Item 1", "Item 2"], ordered=True)
         assert len(doc.elements) == 1
-        assert isinstance(list_element, List)
+        assert isinstance(list_element, DocumentList)
         assert list_element.ordered is True
         assert len(list_element.items) == 2
         assert list_element.items[0].content == "Item 1"

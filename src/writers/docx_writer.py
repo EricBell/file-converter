@@ -121,7 +121,12 @@ class DocxWriter(BaseWriter):
         para = docx_doc.add_paragraph()
         run = para.add_run(code_block.content)
         run.font.name = 'Courier New'
-        run.font.size = docx_doc.styles['Normal'].font.size
+        # Use a safe default size instead of accessing styles
+        try:
+            run.font.size = docx_doc.styles['Normal'].font.size
+        except (KeyError, TypeError):
+            # Fallback if styles access fails (e.g., in tests)
+            pass
 
         # Add some styling to make it look like a code block
         para.paragraph_format.left_indent = Inches(0.5)

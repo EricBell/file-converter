@@ -247,13 +247,13 @@ class TestDocxWriter:
         writer = DocxWriter()
 
         # Create a mock list element without items
-        class MockList:
+        class MockDocumentList:
             def __init__(self):
                 self.element_type = ElementType.LIST
                 self.attributes = {"ordered": False}
 
         mock_docx_doc = Mock()
-        mock_list = MockList()
+        mock_list = MockDocumentList()
 
         # Should not crash when list has no items
         writer._add_list_to_docx(mock_list, mock_docx_doc)

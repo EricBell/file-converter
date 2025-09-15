@@ -67,13 +67,13 @@ class PDFReader(BaseReader):
         return (
             len(line) < 100 and
             (line.isupper() or
-             re.match(r'^[A-Z][^.]*[^.]$', line) or
-             re.match(r'^\d+\.?\s+[A-Z]', line))
+             bool(re.match(r'^[A-Z][^.]*[^.]$', line)) or
+             bool(re.match(r'^\d+(\.\d+)*\.?\s+[A-Z]', line)))
         )
 
     def _determine_heading_level(self, line: str) -> int:
         """Determine the heading level based on line characteristics."""
-        if re.match(r'^\d+\.?\s+', line):
+        if re.match(r'^\d+(\.\d+)*\.?\s+', line):
             return 2  # Numbered headings are level 2
         elif line.isupper():
             return 1  # All caps are level 1

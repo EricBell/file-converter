@@ -58,8 +58,9 @@ class TestPDFReader:
         mock_doc = Mock()
         mock_page = Mock()
         mock_page.get_text.return_value = sample_pdf_content
-        mock_doc.__len__.return_value = 1
-        mock_doc.__getitem__.return_value = mock_page
+        # Properly mock length and indexing
+        mock_doc.__len__ = Mock(return_value=1)
+        mock_doc.__getitem__ = Mock(return_value=mock_page)
         mock_fitz.open.return_value = mock_doc
 
         reader = PDFReader()
@@ -162,8 +163,8 @@ Another paragraph here."""
         mock_doc = Mock()
         mock_page = Mock()
         mock_page.get_text.return_value = test_text
-        mock_doc.__len__.return_value = 1
-        mock_doc.__getitem__.return_value = mock_page
+        mock_doc.__len__ = Mock(return_value=1)
+        mock_doc.__getitem__ = Mock(return_value=mock_page)
         mock_fitz.open.return_value = mock_doc
 
         reader = PDFReader()
@@ -190,8 +191,8 @@ Another paragraph here."""
         mock_doc = Mock()
         mock_page = Mock()
         mock_page.get_text.return_value = ""  # Empty page
-        mock_doc.__len__.return_value = 1
-        mock_doc.__getitem__.return_value = mock_page
+        mock_doc.__len__ = Mock(return_value=1)
+        mock_doc.__getitem__ = Mock(return_value=mock_page)
         mock_fitz.open.return_value = mock_doc
 
         reader = PDFReader()
@@ -214,8 +215,8 @@ Another paragraph here."""
         mock_page2.get_text.return_value = "Page 2 content\nSecond paragraph."
 
         mock_doc = Mock()
-        mock_doc.__len__.return_value = 2
-        mock_doc.__getitem__.side_effect = [mock_page1, mock_page2]
+        mock_doc.__len__ = Mock(return_value=2)
+        mock_doc.__getitem__ = Mock(side_effect=[mock_page1, mock_page2])
         mock_fitz.open.return_value = mock_doc
 
         reader = PDFReader()
