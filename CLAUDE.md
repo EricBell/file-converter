@@ -64,6 +64,11 @@ To add new format support:
 
 The architecture supports easy extension to new formats and is designed to work well with web frameworks (Flask/FastAPI) by separating core conversion logic from CLI interface.
 
+### Key Design Patterns
+- **Factory Pattern**: `ConverterFactory` automatically registers and creates appropriate readers/writers
+- **Document Abstraction**: Central `Document` class with `DocumentElement` subclasses (Heading, Paragraph, DocumentList, etc.)
+- **Separation of Concerns**: Readers parse format-specific input → Document objects → Writers generate format-specific output
+
 ## Dependencies
 
 - PyMuPDF (fitz): PDF text extraction
@@ -76,24 +81,39 @@ The architecture supports easy extension to new formats and is designed to work 
 
 Run tests with:
 ```bash
-pytest                    # Run all tests
-pytest tests/unit/        # Run unit tests only
-pytest tests/integration/ # Run integration tests only
-pytest --cov=src          # Run with coverage report
+pytest                              # Run all tests
+pytest tests/unit/                  # Run unit tests only
+pytest tests/integration/           # Run integration tests only
+pytest --cov=src                    # Run with coverage report
+pytest --cov=src --cov-report=html  # Generate HTML coverage report
+pytest -k "test_document"           # Run specific test pattern
+pytest tests/unit/test_document.py::TestDocument::test_add_heading  # Run single test
 ```
 
-Test structure:
-- **tests/unit/**: Unit tests for individual components
-- **tests/integration/**: Integration tests for CLI and end-to-end workflows
-- **tests/conftest.py**: Shared fixtures and test configuration
-- **pytest.ini**: Pytest configuration with coverage settings
+**Important Testing Notes:**
+- **Type annotation conflict**: The `DocumentList` class was renamed to avoid conflicts with `typing.List`
+- **Mocking strategy**: External libraries (PyMuPDF, python-docx) are fully mocked in tests
+- **CLI testing**: Uses Click's `CliRunner` for integration testing
+- **Coverage target**: Minimum 80% (currently achieving 96%)
 
-The test suite includes:
-- Document model tests
-- Reader/writer tests with mocking
-- Converter factory tests
-- CLI integration tests
-- Coverage reporting (minimum 80%)
+Test structure:
+- **tests/unit/**: Unit tests for individual components (106 tests)
+- **tests/integration/**: Integration tests for CLI and end-to-end workflows (22 tests)
+- **tests/conftest.py**: Shared fixtures including sample documents and temp directories
+- **pytest.ini**: Pytest configuration with coverage settings and markers
+
+## Development Notes
+
+### Common Issues
+- **Import errors**: Ensure virtual environment is activated and dependencies installed
+- **Type annotation conflicts**: The codebase uses `DocumentList` instead of `List` to avoid conflicts with `typing.List`
+- **CLI testing**: When writing CLI tests, be aware of file overwrite prompts - use different output formats or `--overwrite` flag
+- **Mock configuration**: External library mocks (PyMuPDF, python-docx) require proper `__len__` and `__getitem__` setup
+
+### Debugging
+- Use `python convert.py --list-formats` to verify registered readers/writers
+- Run `pytest -v -s` for verbose test output with print statements
+- Check `htmlcov/index.html` after running coverage tests for detailed coverage analysis
 
 ## Supported Conversions
 
