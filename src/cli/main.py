@@ -28,14 +28,14 @@ def generate_output_path(input_path: Path, output_format: str) -> Path:
               help='Output file path. If not provided, auto-generates '
                    'based on input filename and target format')
 @click.option('-f', '--format', 'output_format',
-              type=click.Choice(['md', 'markdown', 'docx'], case_sensitive=False),
+              type=click.Choice(['md', 'markdown', 'docx', 'pdf'], case_sensitive=False),
               help='Output format. If not specified, tries to detect '
                    'from output file extension')
 @click.option('--overwrite', is_flag=True,
               help='Overwrite output file if it exists')
 @click.option('--list-formats', is_flag=True,
               help='List supported input and output formats')
-@click.version_option(version='2.0.0')
+@click.version_option(version='2.1.0')
 def main(input_file: Optional[Path], output: Optional[Path], output_format: Optional[str],
          overwrite: bool, list_formats: bool):
     """
@@ -47,6 +47,7 @@ def main(input_file: Optional[Path], output: Optional[Path], output_format: Opti
     - PDF to Markdown
     - PDF to DOCX
     - Markdown to DOCX
+    - Markdown to PDF
     - Markdown to Markdown (for reformatting)
     """
 
@@ -84,6 +85,8 @@ def main(input_file: Optional[Path], output: Optional[Path], output_format: Opti
             output_ext = '.md'
         elif output_format == 'docx':
             output_ext = '.docx'
+        elif output_format == 'pdf':
+            output_ext = '.pdf'
         else:
             output_ext = f'.{output_format}'
 

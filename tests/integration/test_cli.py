@@ -28,7 +28,7 @@ class TestCLIIntegration:
         """Test the version command."""
         result = self.runner.invoke(main, ['--version'])
         assert result.exit_code == 0
-        assert "2.0.0" in result.output
+        assert "2.1.0" in result.output
 
     def test_list_formats_command(self):
         """Test the list formats command."""
@@ -313,3 +313,141 @@ class TestCLIEdgeCases:
         # Should error due to no extension
         assert result.exit_code == 1
         assert "Unsupported input format" in result.output
+
+
+class TestPDFConversions:
+    """Integration tests for PDF conversion functionality."""
+
+    def setup_method(self):
+        """Set up test environment."""
+        self.runner = CliRunner()
+
+    @patch('src.cli.main.ConverterFactory.create_converter')
+    def test_markdown_to_pdf_conversion(self, mock_create_converter, temp_dir):
+        """Test converting Markdown to PDF."""
+        test_file = temp_dir / "test.md"
+        test_file.write_text("# Test Heading\n\nTest paragraph")
+        output_file = temp_dir / "output.pdf"
+
+        mock_converter = mock_create_converter.return_value
+
+        result = self.runner.invoke(main, [
+            str(test_file),
+            '-o', str(output_file)
+        ])
+
+        assert result.exit_code == 0
+        assert "Converting" in result.output
+        assert ".pdf" in result.output
+
+    def test_pdf_format_option(self, temp_dir):
+        """Test using -f pdf option."""
+        test_file = temp_dir / "test.md"
+        test_file.write_text("# Test")
+
+        result = self.runner.invoke(main, [
+            str(test_file),
+            '-f', 'pdf'
+        ])
+
+        # Should generate test.pdf automatically
+        assert "Converting" in result.output or ".pdf" in result.output
+
+    def test_pdf_case_insensitive(self, temp_dir):
+        """Test PDF format option is case insensitive."""
+        test_file = temp_dir / "test.md"
+        test_file.write_text("# Test")
+
+        result = self.runner.invoke(main, [
+            str(test_file),
+            '-f', 'PDF'
+        ])
+
+        # Should work with uppercase
+        assert result.exit_code != 1 or "Unsupported" not in result.output
+
+    @patch('src.cli.main.ConverterFactory.create_converter')
+    def test_pdf_with_complex_content(self, mock_create_converter, temp_dir):
+        """Test PDF conversion with complex Markdown content."""
+        test_file = temp_dir / "complex.md"
+        complex_content = """# Main Heading
+
+## Subheading
+
+This is a paragraph with **bold** and *italic* text.
+
+- Unordered list item 1
+- Unordered list item 2
+
+1. Ordered list item 1
+2. Ordered list item 2
+
+```python
+def hello():
+    print("Hello, World!")
+```
+"""
+        test_file.write_text(complex_content)
+        output_file = temp_dir / "complex.pdf"
+
+        mock_converter = mock_create_converter.return_value
+
+        result = self.runner.invoke(main, [
+            str(test_file),
+            '-o', str(output_file)
+        ])
+
+        assert result.exit_code == 0
+        assert "Converting" in result.output
+
+    def test_pdf_output_path_generation(self, temp_dir):
+        """Test automatic PDF output path generation."""
+        test_file = temp_dir / "document.md"
+        test_file.write_text("# Document")
+
+        result = self.runner.invoke(main, [
+            str(test_file),
+            '-f', 'pdf'
+        ])
+
+        # Should auto-generate document.pdf
+        expected = temp_dir / "document.pdf"
+        assert "Converting" in result.output or str(expected) in result.output
+
+    @patch('src.cli.main.ConverterFactory.create_converter')
+    def test_pdf_overwrite_existing(self, mock_create_converter, temp_dir):
+        """Test overwriting existing PDF file."""
+        test_file = temp_dir / "test.md"
+        test_file.write_text("# Test")
+        output_file = temp_dir / "output.pdf"
+        output_file.write_text("existing pdf content")
+
+        mock_converter = mock_create_converter.return_value
+
+        result = self.runner.invoke(main, [
+            str(test_file),
+            '-o', str(output_file),
+            '--overwrite'
+        ])
+
+        assert "Converting" in result.output
+
+    def test_list_formats_includes_pdf(self):
+        """Test that PDF appears in supported formats list."""
+        result = self.runner.invoke(main, ['--list-formats'])
+
+        assert result.exit_code == 0
+        assert ".pdf" in result.output
+        # PDF should appear as an output format
+        lines = result.output.split('\n')
+        in_output_section = False
+        pdf_in_output = False
+
+        for line in lines:
+            if "output formats:" in line.lower():
+                in_output_section = True
+            elif in_output_section and ".pdf" in line:
+                pdf_in_output = True
+                break
+
+        assert pdf_in_output

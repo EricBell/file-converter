@@ -28,6 +28,7 @@ Common usage patterns:
 - `python convert.py document.pdf -f md` - Convert PDF to Markdown
 - `python convert.py document.pdf -f docx` - Convert PDF to DOCX
 - `python convert.py document.md -f docx` - Convert Markdown to DOCX
+- `python convert.py document.md -f pdf` - Convert Markdown to PDF
 - `python convert.py document.pdf -o custom_name.md` - Specify output file
 - `python convert.py document.pdf --overwrite` - Overwrite without prompting
 - `python convert.py --list-formats` - Show supported formats
@@ -50,6 +51,7 @@ The codebase follows a modular reader/writer pattern:
 - **base.py**: Abstract base class for all writers
 - **markdown_writer.py**: Markdown generation from document objects
 - **docx_writer.py**: DOCX generation using python-docx library
+- **pdf_writer.py**: PDF generation using ReportLab library
 
 ### CLI Interface
 - **src/cli/main.py**: Click-based CLI with format detection and validation
@@ -74,6 +76,7 @@ The architecture supports easy extension to new formats and is designed to work 
 - PyMuPDF (fitz): PDF text extraction
 - Click: CLI framework
 - python-docx: DOCX file generation
+- ReportLab: PDF file generation
 - pytest: Testing framework
 - pytest-cov: Coverage reporting
 
@@ -120,4 +123,5 @@ Test structure:
 - PDF → Markdown
 - PDF → DOCX
 - Markdown → DOCX
+- Markdown → PDF
 - Markdown → Markdown (reformatting)
