@@ -120,8 +120,9 @@ Test structure:
 
 ## Supported Conversions
 
-- PDF → Markdown
-- PDF → DOCX
-- Markdown → DOCX
-- Markdown → PDF
+- PDF → Markdown (.md)
+- PDF → DOCX (.docx)
+- PDF → PDF (reformatting)
+- Markdown → PDF (.pdf)
+- Markdown → DOCX (.docx)
 - Markdown → Markdown (reformatting)

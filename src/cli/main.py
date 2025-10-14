@@ -44,11 +44,14 @@ def main(input_file: Optional[Path], output: Optional[Path], output_format: Opti
     INPUT_FILE: Path to the file to convert
 
     Supported conversions:
-    - PDF to Markdown
-    - PDF to DOCX
-    - Markdown to DOCX
-    - Markdown to PDF
-    - Markdown to Markdown (for reformatting)
+    - PDF to Markdown (.md)
+    - PDF to DOCX (.docx)
+    - PDF to PDF (reformatting)
+    - Markdown to PDF (.pdf)
+    - Markdown to DOCX (.docx)
+    - Markdown to Markdown (reformatting)
+
+    Use --list-formats to see all supported file extensions.
     """
 
     if list_formats:

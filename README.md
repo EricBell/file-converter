@@ -66,10 +66,11 @@ python convert.py --list-formats
 
 ## Supported Conversions
 
-- PDF → Markdown
-- PDF → DOCX
-- Markdown → PDF
-- Markdown → DOCX
+- PDF → Markdown (.md)
+- PDF → DOCX (.docx)
+- PDF → PDF (reformatting)
+- Markdown → PDF (.pdf)
+- Markdown → DOCX (.docx)
 - Markdown → Markdown (reformatting)
 
 ## Requirements
