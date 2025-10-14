@@ -189,10 +189,10 @@ class TestPDFWriter:
         writer = PDFWriter()
         result = writer._convert_list(list_elem, mock_styles_dict)
 
-        # Verify ListFlowable was created with number type
+        # Verify ListFlowable was created with decimal number type ('1')
         mock_list_flowable.assert_called_once()
         call_args = mock_list_flowable.call_args
-        assert call_args[1]['bulletType'] == 'number'
+        assert call_args[1]['bulletType'] == '1'
 
     @patch('src.writers.pdf_writer.Preformatted')
     @patch('src.writers.pdf_writer.ParagraphStyle')

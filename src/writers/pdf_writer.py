@@ -154,9 +154,11 @@ class PDFWriter(BaseWriter):
             list_items.append(ListItem(item_para, bulletText=bullet_text, leftIndent=20))
 
         # Create the list flowable
+        # For bulletType: 'bullet' for unordered, '1' for decimal numbers,
+        # 'a'/'A' for letters, 'i'/'I' for roman numerals
         list_flowable = ListFlowable(
             list_items,
-            bulletType='bullet' if not is_ordered else 'number',
+            bulletType='bullet' if not is_ordered else '1',
             start=1 if is_ordered else None,
             leftIndent=20,
             bulletFontName='Helvetica',
