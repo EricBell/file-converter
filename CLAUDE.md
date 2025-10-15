@@ -52,6 +52,9 @@ The codebase follows a modular reader/writer pattern:
 - **markdown_writer.py**: Markdown generation from document objects
 - **docx_writer.py**: DOCX generation using python-docx library
 - **pdf_writer.py**: PDF generation using ReportLab library
+  - **Unicode Support**: Uses DejaVu Sans Mono font for code blocks to support Unicode characters (box-drawing, arrows, etc.)
+  - Automatically detects font on Linux, macOS, and Windows
+  - Falls back to Courier with warning if font unavailable
 
 ### CLI Interface
 - **src/cli/main.py**: Click-based CLI with format detection and validation
@@ -112,6 +115,14 @@ Test structure:
 - **Type annotation conflicts**: The codebase uses `DocumentList` instead of `List` to avoid conflicts with `typing.List`
 - **CLI testing**: When writing CLI tests, be aware of file overwrite prompts - use different output formats or `--overwrite` flag
 - **Mock configuration**: External library mocks (PyMuPDF, python-docx) require proper `__len__` and `__getitem__` setup
+- **Unicode characters in PDF code blocks**:
+  - The PDF writer uses DejaVu Sans Mono font to properly render Unicode characters (diagrams, arrows, box-drawing) in code blocks
+  - If you see black squares (■) instead of Unicode characters, ensure DejaVu Sans Mono is installed on your system
+  - Common installation paths checked automatically:
+    - Linux: `/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf`
+    - macOS: `/Library/Fonts/DejaVuSansMono.ttf`
+    - Windows: `C:/Windows/Fonts/DejaVuSansMono.ttf`
+  - Install on Linux: `sudo apt-get install fonts-dejavu` or `sudo dnf install dejavu-sans-mono-fonts`
 
 ### Debugging
 - Use `python convert.py --list-formats` to verify registered readers/writers

@@ -4,6 +4,7 @@ PDF writer implementation using ReportLab.
 
 from pathlib import Path
 from typing import Union
+import warnings
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
@@ -19,6 +20,53 @@ from ..core.document import Document, ElementType
 
 class PDFWriter(BaseWriter):
     """Writer for PDF files using ReportLab."""
+
+    # Class-level flag to track font registration
+    _font_registered = False
+    _unicode_font_name = None
+
+    def __init__(self):
+        """Initialize PDF writer and register Unicode-capable fonts."""
+        super().__init__()
+        if not PDFWriter._font_registered:
+            PDFWriter._unicode_font_name = self._register_unicode_font()
+            PDFWriter._font_registered = True
+
+    def _register_unicode_font(self) -> str:
+        """
+        Register a Unicode-capable monospace font with ReportLab.
+
+        Returns:
+            str: The font name to use for code blocks, or 'Courier' as fallback
+        """
+        # Common font paths across different operating systems
+        font_paths = [
+            # Linux
+            '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf',
+            # macOS
+            '/Library/Fonts/DejaVuSansMono.ttf',
+            '/System/Library/Fonts/DejaVuSansMono.ttf',
+            # Windows (if installed)
+            'C:/Windows/Fonts/DejaVuSansMono.ttf',
+            # Bundled with application
+            Path(__file__).parent.parent / 'fonts' / 'DejaVuSansMono.ttf',
+        ]
+
+        for font_path in font_paths:
+            font_path = Path(font_path)
+            if font_path.exists():
+                try:
+                    pdfmetrics.registerFont(TTFont('DejaVuSansMono', str(font_path)))
+                    return 'DejaVuSansMono'
+                except Exception as e:
+                    warnings.warn(f"Failed to register font {font_path}: {e}")
+
+        # Fallback to Courier with warning
+        warnings.warn(
+            "DejaVu Sans Mono font not found. Unicode characters in code blocks "
+            "may not render correctly. Using Courier as fallback."
+        )
+        return 'Courier'
 
     def write(self, document: Document, output_path: Union[str, Path]) -> None:
         """Write a document to a PDF file."""
@@ -169,11 +217,11 @@ class PDFWriter(BaseWriter):
 
     def _convert_code_block(self, code_block, styles):
         """Convert a code block element to PDF."""
-        # Create a custom style for code blocks with monospace font
+        # Create a custom style for code blocks with Unicode-capable monospace font
         code_style = ParagraphStyle(
             'CodeBlock',
             parent=styles['Code'],
-            fontName='Courier',
+            fontName=self._unicode_font_name or 'Courier',
             fontSize=9,
             leftIndent=20,
             rightIndent=20,
