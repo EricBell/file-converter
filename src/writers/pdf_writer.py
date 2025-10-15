@@ -182,15 +182,27 @@ class PDFWriter(BaseWriter):
         """Convert a paragraph element to PDF."""
         return Paragraph(paragraph.content, styles['Normal'])
 
-    def _convert_list(self, list_element, styles):
-        """Convert a list element to PDF."""
+    def _convert_list(self, list_element, styles, base_indent=20):
+        """
+        Convert a list element to PDF, with support for nested lists.
+
+        Args:
+            list_element: The DocumentList to convert
+            styles: ReportLab style sheet
+            base_indent: Base indentation level in points
+
+        Returns:
+            List of flowables representing the list structure
+        """
         if not hasattr(list_element, 'items') or not list_element.items:
             return None
 
         is_ordered = list_element.attributes.get('ordered', False)
 
-        # Create list items
-        list_items = []
+        # Create flowables list to return
+        flowables = []
+
+        # Process each item
         for i, item in enumerate(list_element.items, 1):
             if is_ordered:
                 bullet_text = f"{i}."
@@ -199,21 +211,29 @@ class PDFWriter(BaseWriter):
 
             # Create paragraph for list item content
             item_para = Paragraph(item.content, styles['Normal'])
-            list_items.append(ListItem(item_para, bulletText=bullet_text, leftIndent=20))
 
-        # Create the list flowable
-        # For bulletType: 'bullet' for unordered, '1' for decimal numbers,
-        # 'a'/'A' for letters, 'i'/'I' for roman numerals
-        list_flowable = ListFlowable(
-            list_items,
-            bulletType='bullet' if not is_ordered else '1',
-            start=1 if is_ordered else None,
-            leftIndent=20,
-            bulletFontName='Helvetica',
-            bulletFontSize=10
-        )
+            # Create list item with proper indentation
+            list_item_flowable = ListFlowable(
+                [ListItem(item_para, bulletText=bullet_text, leftIndent=base_indent)],
+                bulletType='bullet' if not is_ordered else '1',
+                start=i if is_ordered else None,
+                leftIndent=base_indent,
+                bulletFontName='Helvetica',
+                bulletFontSize=10
+            )
+            flowables.append(list_item_flowable)
 
-        return list_flowable
+            # Process nested children if any
+            if hasattr(item, 'children') and item.children:
+                for child_list in item.children:
+                    nested_flowables = self._convert_list(child_list, styles, base_indent + 30)
+                    if nested_flowables:
+                        if isinstance(nested_flowables, list):
+                            flowables.extend(nested_flowables)
+                        else:
+                            flowables.append(nested_flowables)
+
+        return flowables
 
     def _convert_code_block(self, code_block, styles):
         """Convert a code block element to PDF."""

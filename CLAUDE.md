@@ -40,21 +40,28 @@ The codebase follows a modular reader/writer pattern:
 ### Core Components
 
 - **src/core/document.py**: Document abstraction layer with structured elements (headings, paragraphs, lists, code blocks)
+  - **Nested Lists**: `ListItem` elements can contain child `DocumentList` objects for hierarchical list structures
+  - Supports arbitrary nesting depth with proper indentation tracking
 - **src/core/converter.py**: Base converter interface and factory for orchestrating conversions
 
 ### Readers (src/readers/)
 - **base.py**: Abstract base class for all readers
 - **pdf_reader.py**: PDF parsing using PyMuPDF with heading detection
-- **markdown_reader.py**: Markdown parsing with support for headings, lists, code blocks
+- **markdown_reader.py**: Markdown parsing with support for headings, lists (including nested), code blocks
+  - Detects indentation (2 spaces per level) to build hierarchical list structures
+  - Recursively parses nested lists with `_parse_list()` method
 
 ### Writers (src/writers/)
 - **base.py**: Abstract base class for all writers
 - **markdown_writer.py**: Markdown generation from document objects
+  - Recursively renders nested lists with proper 2-space indentation per level
 - **docx_writer.py**: DOCX generation using python-docx library
+  - Nested lists rendered with increasing indentation (0.5 inches per level)
 - **pdf_writer.py**: PDF generation using ReportLab library
   - **Unicode Support**: Uses DejaVu Sans Mono font for code blocks to support Unicode characters (box-drawing, arrows, etc.)
   - Automatically detects font on Linux, macOS, and Windows
   - Falls back to Courier with warning if font unavailable
+  - **Nested Lists**: Recursively renders nested lists with increasing indentation (30 points per level)
 
 ### CLI Interface
 - **src/cli/main.py**: Click-based CLI with format detection and validation
@@ -72,7 +79,9 @@ The architecture supports easy extension to new formats and is designed to work 
 ### Key Design Patterns
 - **Factory Pattern**: `ConverterFactory` automatically registers and creates appropriate readers/writers
 - **Document Abstraction**: Central `Document` class with `DocumentElement` subclasses (Heading, Paragraph, DocumentList, etc.)
+  - **Hierarchical Lists**: `ListItem.children` field enables recursive tree structures for nested lists
 - **Separation of Concerns**: Readers parse format-specific input → Document objects → Writers generate format-specific output
+- **Recursive Processing**: Nested list parsing and rendering uses recursion to handle arbitrary nesting depth
 
 ## Dependencies
 
@@ -123,6 +132,10 @@ Test structure:
     - macOS: `/Library/Fonts/DejaVuSansMono.ttf`
     - Windows: `C:/Windows/Fonts/DejaVuSansMono.ttf`
   - Install on Linux: `sudo apt-get install fonts-dejavu` or `sudo dnf install dejavu-sans-mono-fonts`
+- **Nested lists in Markdown**:
+  - Use 2-space indentation per nesting level (standard Markdown convention)
+  - Nested structure is preserved across all output formats (PDF, DOCX, Markdown)
+  - Mixed ordered/unordered lists at different levels are supported
 
 ### Debugging
 - Use `python convert.py --list-formats` to verify registered readers/writers

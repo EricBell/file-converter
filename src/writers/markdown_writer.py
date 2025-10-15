@@ -69,20 +69,38 @@ class MarkdownWriter(BaseWriter):
         """Convert a paragraph element to Markdown."""
         return paragraph.content
 
-    def _convert_list(self, list_element) -> str:
-        """Convert a list element to Markdown."""
+    def _convert_list(self, list_element, indent_level=0) -> str:
+        """
+        Convert a list element to Markdown with support for nested lists.
+
+        Args:
+            list_element: The DocumentList to convert
+            indent_level: Current indentation level (2 spaces per level)
+
+        Returns:
+            String representation of the list in Markdown format
+        """
         if not hasattr(list_element, 'items') or not list_element.items:
             return ""
 
         is_ordered = list_element.attributes.get('ordered', False)
         markdown_lines = []
 
+        indent = "  " * indent_level  # 2 spaces per indent level
+
         for i, item in enumerate(list_element.items, 1):
             if is_ordered:
                 prefix = f"{i}."
             else:
                 prefix = "-"
-            markdown_lines.append(f"{prefix} {item.content}")
+            markdown_lines.append(f"{indent}{prefix} {item.content}")
+
+            # Process nested children if any
+            if hasattr(item, 'children') and item.children:
+                for child_list in item.children:
+                    nested_markdown = self._convert_list(child_list, indent_level + 1)
+                    if nested_markdown:
+                        markdown_lines.append(nested_markdown)
 
         return "\n".join(markdown_lines)
 

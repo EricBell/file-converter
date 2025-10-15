@@ -94,14 +94,24 @@ class DocxWriter(BaseWriter):
         """Add a paragraph element to DOCX."""
         docx_doc.add_paragraph(paragraph.content)
 
-    def _add_list_to_docx(self, list_element, docx_doc: DocxDocument) -> None:
-        """Add a list element to DOCX."""
+    def _add_list_to_docx(self, list_element, docx_doc: DocxDocument, indent_level=0) -> None:
+        """
+        Add a list element to DOCX with support for nested lists.
+
+        Args:
+            list_element: The DocumentList to convert
+            docx_doc: The python-docx Document object
+            indent_level: Current nesting level (0 = top level)
+        """
         if not hasattr(list_element, 'items') or not list_element.items:
             return
 
         # python-docx doesn't have built-in list support, so we'll simulate it
         # with indented paragraphs
         is_ordered = list_element.attributes.get('ordered', False)
+
+        # Calculate indentation based on nesting level
+        base_indent = 0.25 + (indent_level * 0.5)  # Increase indent for each level
 
         for i, item in enumerate(list_element.items, 1):
             if is_ordered:
@@ -110,9 +120,14 @@ class DocxWriter(BaseWriter):
                 bullet = "•"
 
             para = docx_doc.add_paragraph()
-            para.paragraph_format.left_indent = Inches(0.25)
+            para.paragraph_format.left_indent = Inches(base_indent)
             para.paragraph_format.first_line_indent = Inches(-0.25)
             run = para.add_run(f"{bullet} {item.content}")
+
+            # Process nested children if any
+            if hasattr(item, 'children') and item.children:
+                for child_list in item.children:
+                    self._add_list_to_docx(child_list, docx_doc, indent_level + 1)
 
     def _add_code_block_to_docx(self, code_block,
                                docx_doc: DocxDocument) -> None:

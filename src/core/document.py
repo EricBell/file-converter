@@ -71,10 +71,13 @@ class DocumentList(DocumentElement):
 @dataclass
 class ListItem(DocumentElement):
     """Represents a list item element."""
+    children: List["DocumentList"] = None
 
     def __post_init__(self):
         super().__post_init__()
         self.element_type = ElementType.LIST_ITEM
+        if self.children is None:
+            self.children = []
 
 
 @dataclass
