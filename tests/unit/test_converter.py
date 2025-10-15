@@ -31,7 +31,7 @@ class MockReader(BaseReader):
 class MockWriter(BaseWriter):
     """Mock writer for testing."""
 
-    def write(self, document, output_path):
+    def write(self, document, output_path, footer_config=None):
         Path(output_path).write_text("Mock output content")
 
     def to_string(self, document):
@@ -189,7 +189,7 @@ class TestDocumentConverter:
         self.mock_reader.supports_format.assert_called_once_with(input_file)
         self.mock_reader.read.assert_called_once_with(input_file)
         self.mock_writer.supports_format.assert_called_once_with(output_file)
-        self.mock_writer.write.assert_called_once_with(mock_document, output_file)
+        self.mock_writer.write.assert_called_once_with(mock_document, output_file, None)
 
     def test_convert_input_file_not_found(self, temp_dir):
         """Test conversion with non-existent input file."""

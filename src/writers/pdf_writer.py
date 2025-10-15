@@ -3,19 +3,24 @@ PDF writer implementation using ReportLab.
 """
 
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 import warnings
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.lib.enums import TA_LEFT
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowable, ListItem, Preformatted
+from reportlab.lib.enums import TA_LEFT, TA_RIGHT
+from reportlab.platypus import (
+    BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer,
+    ListFlowable, ListItem, Preformatted
+)
 from reportlab.lib.fonts import addMapping
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 from .base import BaseWriter
 from ..core.document import Document, ElementType
+from ..core.footer import FooterConfig
+from ..core.lockfile import cleanup_lock_files
 
 
 class PDFWriter(BaseWriter):
@@ -68,7 +73,8 @@ class PDFWriter(BaseWriter):
         )
         return 'Courier'
 
-    def write(self, document: Document, output_path: Union[str, Path]) -> None:
+    def write(self, document: Document, output_path: Union[str, Path],
+              footer_config: Optional[FooterConfig] = None) -> None:
         """Write a document to a PDF file."""
         output_path = Path(output_path)
 
@@ -77,9 +83,12 @@ class PDFWriter(BaseWriter):
                            f"{output_path.suffix}")
 
         try:
-            self._create_pdf_document(document, output_path)
+            self._create_pdf_document(document, output_path, footer_config)
         except Exception as e:
             raise IOError(f"Error writing to file {output_path}: {str(e)}")
+        finally:
+            # Always clean up lock files, even if an error occurred
+            cleanup_lock_files(output_path)
 
     def to_string(self, document: Document) -> str:
         """
@@ -107,17 +116,53 @@ class PDFWriter(BaseWriter):
 
         return "\n".join(parts)
 
-    def _create_pdf_document(self, document: Document, output_path: Path) -> None:
-        """Create a PDF document from our Document object."""
+    def _create_pdf_document(self, document: Document, output_path: Path,
+                             footer_config: Optional[FooterConfig] = None) -> None:
+        """Create a PDF document from our Document object with optional footers."""
+        # Set up margins - increase bottom margin if footer is enabled
+        bottom_margin = 48 if (footer_config and footer_config.enabled) else 18
+
         # Create the PDF document
-        pdf_doc = SimpleDocTemplate(
+        pdf_doc = BaseDocTemplate(
             str(output_path),
             pagesize=letter,
             rightMargin=72,
             leftMargin=72,
             topMargin=72,
-            bottomMargin=18
+            bottomMargin=bottom_margin
         )
+
+        # Create frame for content
+        frame = Frame(
+            pdf_doc.leftMargin,
+            pdf_doc.bottomMargin,
+            pdf_doc.width,
+            pdf_doc.height,
+            id='normal'
+        )
+
+        # Create page template with footer callback
+        def add_page_footer(canvas, doc):
+            """Add footer to page if configured."""
+            if footer_config and footer_config.enabled:
+                canvas.saveState()
+                page_num = canvas.getPageNumber()
+                left_text, right_text = footer_config.get_footer_for_page(page_num)
+
+                # Draw left footer text
+                canvas.setFont('Helvetica', 9)
+                canvas.drawString(doc.leftMargin, 24, left_text)
+
+                # Draw right footer text
+                canvas.drawRightString(
+                    doc.width + doc.leftMargin,
+                    24,
+                    right_text
+                )
+                canvas.restoreState()
+
+        template = PageTemplate(id='main', frames=[frame], onPage=add_page_footer)
+        pdf_doc.addPageTemplates([template])
 
         # Get styles
         styles = getSampleStyleSheet()

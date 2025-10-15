@@ -156,7 +156,8 @@ console.log("Hello");
         document = reader.read(markdown_file)
 
         lists = document.get_elements_by_type(ElementType.LIST)
-        assert len(lists) >= 5  # Each list item is treated separately in simple implementation
+        # Grouped lists: unordered (3 items), ordered (2 items), and alternative bullets
+        assert len(lists) >= 3
 
     def test_parse_paragraphs(self, temp_dir):
         """Test parsing paragraphs."""

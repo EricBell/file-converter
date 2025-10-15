@@ -3,18 +3,22 @@ DOCX writer implementation using python-docx.
 """
 
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 from docx import Document as DocxDocument
-from docx.shared import Inches
+from docx.shared import Inches, Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 from .base import BaseWriter
 from ..core.document import Document, ElementType
+from ..core.footer import FooterConfig
+from ..core.lockfile import cleanup_lock_files
 
 
 class DocxWriter(BaseWriter):
     """Writer for DOCX files using python-docx."""
 
-    def write(self, document: Document, output_path: Union[str, Path]) -> None:
+    def write(self, document: Document, output_path: Union[str, Path],
+              footer_config: Optional[FooterConfig] = None) -> None:
         """Write a document to a DOCX file."""
         output_path = Path(output_path)
 
@@ -23,10 +27,13 @@ class DocxWriter(BaseWriter):
                            f"{output_path.suffix}")
 
         try:
-            docx_doc = self._create_docx_document(document)
+            docx_doc = self._create_docx_document(document, footer_config)
             docx_doc.save(output_path)
         except Exception as e:
             raise IOError(f"Error writing to file {output_path}: {str(e)}")
+        finally:
+            # Always clean up lock files, even if an error occurred
+            cleanup_lock_files(output_path)
 
     def to_string(self, document: Document) -> str:
         """
@@ -54,7 +61,8 @@ class DocxWriter(BaseWriter):
 
         return "\n".join(parts)
 
-    def _create_docx_document(self, document: Document) -> DocxDocument:
+    def _create_docx_document(self, document: Document,
+                              footer_config: Optional[FooterConfig] = None) -> DocxDocument:
         """Create a python-docx Document from our Document object."""
         docx_doc = DocxDocument()
 
@@ -66,7 +74,72 @@ class DocxWriter(BaseWriter):
         for element in document.elements:
             self._add_element_to_docx(element, docx_doc)
 
+        # Add footer if configured
+        if footer_config and footer_config.enabled:
+            self._add_footer(docx_doc, footer_config)
+
         return docx_doc
+
+    def _add_footer(self, docx_doc: DocxDocument, footer_config: FooterConfig) -> None:
+        """
+        Add footer to the document.
+
+        Args:
+            docx_doc: The python-docx Document object
+            footer_config: Footer configuration
+        """
+        section = docx_doc.sections[0]
+
+        # Configure for different odd/even pages if double-sided
+        if footer_config.layout == "double":
+            section.different_first_page_header_footer = False
+            section.different_odd_even_pages_header_footer = True
+
+            # Add odd page footer (first page footer becomes odd page footer)
+            odd_footer = section.footer
+            self._format_footer(odd_footer, footer_config, page_number=1)
+
+            # Add even page footer
+            even_footer = section.even_page_footer
+            self._format_footer(even_footer, footer_config, page_number=2)
+        else:
+            # Single-sided: same footer on all pages
+            footer = section.footer
+            self._format_footer(footer, footer_config, page_number=1)
+
+    def _format_footer(self, footer, footer_config: FooterConfig, page_number: int) -> None:
+        """
+        Format a footer with left and right aligned text.
+
+        Args:
+            footer: The footer object to format
+            footer_config: Footer configuration
+            page_number: Page number to determine layout (for double-sided)
+        """
+        # Get the footer text for this page type
+        left_text, right_text = footer_config.get_footer_for_page(page_number)
+
+        # Clear any existing content
+        for paragraph in footer.paragraphs:
+            paragraph.clear()
+
+        # Add paragraph with tab stops for alignment
+        para = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+
+        # Add left-aligned text
+        run_left = para.add_run(left_text)
+        run_left.font.size = Pt(9)
+
+        # Add tab and right-aligned text
+        # Note: We use a simple approach with tabs. For page numbers in DOCX,
+        # we'll use the placeholder text since actual page numbers would require
+        # field codes which are more complex.
+        para.add_run('\t' + right_text)
+        para.runs[1].font.size = Pt(9)
+
+        # Set tab stop for right alignment
+        from docx.shared import RGBColor
+        para.paragraph_format.tab_stops.add_tab_stop(Inches(6.0), WD_ALIGN_PARAGRAPH.RIGHT)
 
     def _add_element_to_docx(self, element, docx_doc: DocxDocument) -> None:
         """Add a document element to the DOCX document."""

@@ -8,6 +8,8 @@ from typing import Optional
 import click
 
 from ..core.converter import ConverterFactory
+from ..core.footer import FooterConfig
+from ..core.lockfile import cleanup_lock_files
 
 
 def detect_format_from_extension(file_path: Path) -> str:
@@ -35,9 +37,25 @@ def generate_output_path(input_path: Path, output_format: str) -> Path:
               help='Overwrite output file if it exists')
 @click.option('--list-formats', is_flag=True,
               help='List supported input and output formats')
+@click.option('--no-footer', is_flag=True,
+              help='Disable footer (footer is enabled by default)')
+@click.option('--footer-layout',
+              type=click.Choice(['single', 'double'], case_sensitive=False),
+              default='single',
+              help='Footer layout: single-sided or double-sided (default: single)')
+@click.option('--footer-left',
+              default='Last updated: {date}',
+              help='Left footer template (default: "Last updated: {date}")')
+@click.option('--footer-right',
+              default='Page {page}',
+              help='Right footer template (default: "Page {page}")')
+@click.option('--date-format',
+              default='%Y-%m-%d',
+              help='Date format string (default: "%%Y-%%m-%%d" for YYYY-MM-DD)')
 @click.version_option(version='2.1.0')
 def main(input_file: Optional[Path], output: Optional[Path], output_format: Optional[str],
-         overwrite: bool, list_formats: bool):
+         overwrite: bool, list_formats: bool, no_footer: bool, footer_layout: str,
+         footer_left: str, footer_right: str, date_format: str):
     """
     Convert files between different document formats.
 
@@ -120,12 +138,21 @@ def main(input_file: Optional[Path], output: Optional[Path], output_format: Opti
             sys.exit(1)
 
     try:
+        # Create footer configuration
+        footer_config = FooterConfig(
+            enabled=not no_footer,
+            layout=footer_layout,
+            left_template=footer_left,
+            right_template=footer_right,
+            date_format=date_format
+        )
+
         click.echo(f"Converting '{input_file}' ({input_ext}) to "
                   f"'{output}' ({output_ext})...")
 
         # Create converter and perform conversion
         converter = ConverterFactory.create_converter(input_file, output)
-        converter.convert(input_file, output)
+        converter.convert(input_file, output, footer_config)
 
         click.echo(f"✓ Successfully converted to '{output}'")
         click.echo(f"  Input:  {input_file} ({input_ext})")
@@ -138,6 +165,9 @@ def main(input_file: Optional[Path], output: Optional[Path], output_format: Opti
 
     except Exception as e:
         click.echo(f"Error: {str(e)}", err=True)
+        # Clean up any lock files that may have been created
+        if output:
+            cleanup_lock_files(output)
         sys.exit(1)
 
 

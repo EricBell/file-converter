@@ -49,13 +49,17 @@ class TestPDFWriter:
             writer.to_string("not a document")
 
     @patch('src.writers.pdf_writer.ParagraphStyle')
-    @patch('src.writers.pdf_writer.SimpleDocTemplate')
+    @patch('src.writers.pdf_writer.BaseDocTemplate')
     @patch('src.writers.pdf_writer.getSampleStyleSheet')
     @patch('src.writers.pdf_writer.Paragraph')
     def test_create_pdf_document_with_title(self, mock_paragraph, mock_styles,
                                            mock_doc_template, mock_paragraph_style, sample_document):
         """Test creating PDF document with title."""
         mock_pdf_doc = Mock()
+        mock_pdf_doc.leftMargin = 72
+        mock_pdf_doc.bottomMargin = 18
+        mock_pdf_doc.width = 468
+        mock_pdf_doc.height = 648
         mock_doc_template.return_value = mock_pdf_doc
 
         # Mock ParagraphStyle to return a mock style
@@ -89,12 +93,16 @@ class TestPDFWriter:
         # Verify PDF document was built
         mock_pdf_doc.build.assert_called_once()
 
-    @patch('src.writers.pdf_writer.SimpleDocTemplate')
+    @patch('src.writers.pdf_writer.BaseDocTemplate')
     @patch('src.writers.pdf_writer.getSampleStyleSheet')
     @patch('src.writers.pdf_writer.Paragraph')
     def test_create_pdf_document_without_title(self, mock_paragraph, mock_styles, mock_doc_template):
         """Test creating PDF document without title."""
         mock_pdf_doc = Mock()
+        mock_pdf_doc.leftMargin = 72
+        mock_pdf_doc.bottomMargin = 18
+        mock_pdf_doc.width = 468
+        mock_pdf_doc.height = 648
         mock_doc_template.return_value = mock_pdf_doc
 
         # Create properly configured style mocks
@@ -168,10 +176,11 @@ class TestPDFWriter:
         writer = PDFWriter()
         result = writer._convert_list(list_elem, mock_styles_dict)
 
-        # Verify ListFlowable was created
-        mock_list_flowable.assert_called_once()
-        call_args = mock_list_flowable.call_args
-        assert call_args[1]['bulletType'] == 'bullet'
+        # Verify ListFlowable was created for each item (2 items = 2 calls)
+        assert mock_list_flowable.call_count == 2
+        # Check that bulletType is 'bullet' for unordered lists
+        for call in mock_list_flowable.call_args_list:
+            assert call[1]['bulletType'] == 'bullet'
 
     @patch('src.writers.pdf_writer.ListFlowable')
     @patch('src.writers.pdf_writer.ListItem')
@@ -189,10 +198,11 @@ class TestPDFWriter:
         writer = PDFWriter()
         result = writer._convert_list(list_elem, mock_styles_dict)
 
-        # Verify ListFlowable was created with decimal number type ('1')
-        mock_list_flowable.assert_called_once()
-        call_args = mock_list_flowable.call_args
-        assert call_args[1]['bulletType'] == '1'
+        # Verify ListFlowable was created for each item (2 items = 2 calls)
+        assert mock_list_flowable.call_count == 2
+        # Check that bulletType is '1' for ordered lists
+        for call in mock_list_flowable.call_args_list:
+            assert call[1]['bulletType'] == '1'
 
     @patch('src.writers.pdf_writer.Preformatted')
     @patch('src.writers.pdf_writer.ParagraphStyle')
@@ -213,12 +223,16 @@ class TestPDFWriter:
         assert "print('hello')" in str(mock_preformatted.call_args)
 
     @patch('src.writers.pdf_writer.ParagraphStyle')
-    @patch('src.writers.pdf_writer.SimpleDocTemplate')
+    @patch('src.writers.pdf_writer.BaseDocTemplate')
     @patch('src.writers.pdf_writer.getSampleStyleSheet')
     @patch('src.writers.pdf_writer.Paragraph')
     def test_write_to_file(self, mock_paragraph, mock_styles, mock_doc_template, mock_paragraph_style, sample_document, temp_dir):
         """Test writing document to file."""
         mock_pdf_doc = Mock()
+        mock_pdf_doc.leftMargin = 72
+        mock_pdf_doc.bottomMargin = 18
+        mock_pdf_doc.width = 468
+        mock_pdf_doc.height = 648
         mock_doc_template.return_value = mock_pdf_doc
 
         # Mock ParagraphStyle to return a mock style
@@ -250,7 +264,7 @@ class TestPDFWriter:
 
         writer.write(sample_document, output_file)
 
-        # Verify SimpleDocTemplate was created with output path
+        # Verify BaseDocTemplate was created with output path
         mock_doc_template.assert_called_once()
         assert str(output_file) in str(mock_doc_template.call_args)
 
@@ -265,7 +279,7 @@ class TestPDFWriter:
         with pytest.raises(ValueError, match="Unsupported output format"):
             writer.write(sample_document, output_file)
 
-    @patch('src.writers.pdf_writer.SimpleDocTemplate')
+    @patch('src.writers.pdf_writer.BaseDocTemplate')
     def test_write_io_error(self, mock_doc_template, sample_document, temp_dir):
         """Test handling IO errors during write."""
         mock_pdf_doc = Mock()
@@ -278,11 +292,15 @@ class TestPDFWriter:
         with pytest.raises(IOError, match="Error writing to file"):
             writer.write(sample_document, output_file)
 
-    @patch('src.writers.pdf_writer.SimpleDocTemplate')
+    @patch('src.writers.pdf_writer.BaseDocTemplate')
     @patch('src.writers.pdf_writer.getSampleStyleSheet')
     def test_empty_document(self, mock_styles, mock_doc_template):
         """Test handling empty document."""
         mock_pdf_doc = Mock()
+        mock_pdf_doc.leftMargin = 72
+        mock_pdf_doc.bottomMargin = 18
+        mock_pdf_doc.width = 468
+        mock_pdf_doc.height = 648
         mock_doc_template.return_value = mock_pdf_doc
         mock_styles.return_value = {}
 
@@ -335,7 +353,7 @@ class TestPDFWriter:
         result = writer._convert_list(mock_list, mock_styles_dict)
         assert result is None
 
-    @patch('src.writers.pdf_writer.SimpleDocTemplate')
+    @patch('src.writers.pdf_writer.BaseDocTemplate')
     @patch('src.writers.pdf_writer.getSampleStyleSheet')
     @patch('src.writers.pdf_writer.Paragraph')
     def test_element_with_no_content(self, mock_paragraph, mock_styles, mock_doc_template):
@@ -412,13 +430,17 @@ class TestPDFWriter:
         # Should fall back to Heading6
         mock_paragraph.assert_called_with("Deep Heading", mock_styles_dict['Heading6'])
 
-    @patch('src.writers.pdf_writer.SimpleDocTemplate')
+    @patch('src.writers.pdf_writer.BaseDocTemplate')
     @patch('src.writers.pdf_writer.getSampleStyleSheet')
     @patch('src.writers.pdf_writer.Spacer')
     @patch('src.writers.pdf_writer.Paragraph')
     def test_spacing_between_elements(self, mock_paragraph, mock_spacer, mock_styles, mock_doc_template):
         """Test that spacing is added between elements."""
         mock_pdf_doc = Mock()
+        mock_pdf_doc.leftMargin = 72
+        mock_pdf_doc.bottomMargin = 18
+        mock_pdf_doc.width = 468
+        mock_pdf_doc.height = 648
         mock_doc_template.return_value = mock_pdf_doc
 
         # Create properly configured style mocks

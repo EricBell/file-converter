@@ -4,21 +4,24 @@ Base interface for document writers.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 from ..core.document import Document
+from ..core.footer import FooterConfig
 
 
 class BaseWriter(ABC):
     """Abstract base class for document writers."""
 
     @abstractmethod
-    def write(self, document: Document, output_path: Union[str, Path]) -> None:
+    def write(self, document: Document, output_path: Union[str, Path],
+              footer_config: Optional[FooterConfig] = None) -> None:
         """
         Write a document to the specified output path.
 
         Args:
             document: Document object to write
             output_path: Path where the document should be written
+            footer_config: Optional footer configuration
 
         Raises:
             ValueError: If the document format is not supported

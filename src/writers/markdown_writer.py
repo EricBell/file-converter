@@ -3,17 +3,25 @@ Markdown writer implementation.
 """
 
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
 from .base import BaseWriter
 from ..core.document import Document, ElementType
+from ..core.footer import FooterConfig
+from ..core.lockfile import cleanup_lock_files
 
 
 class MarkdownWriter(BaseWriter):
     """Writer for Markdown files."""
 
-    def write(self, document: Document, output_path: Union[str, Path]) -> None:
-        """Write a document to a Markdown file."""
+    def write(self, document: Document, output_path: Union[str, Path],
+              footer_config: Optional[FooterConfig] = None) -> None:
+        """
+        Write a document to a Markdown file.
+
+        Note: Footer configuration is ignored for Markdown since it doesn't
+        have the concept of pages.
+        """
         output_path = Path(output_path)
 
         if not self.supports_format(output_path):
@@ -25,6 +33,9 @@ class MarkdownWriter(BaseWriter):
             output_path.write_text(markdown_content, encoding='utf-8')
         except Exception as e:
             raise IOError(f"Error writing to file {output_path}: {str(e)}")
+        finally:
+            # Always clean up lock files, even if an error occurred
+            cleanup_lock_files(output_path)
 
     def to_string(self, document: Document) -> str:
         """Convert a document to Markdown string."""

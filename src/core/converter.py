@@ -4,8 +4,9 @@ Base converter interface and factory for document conversions.
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Union, Dict, Type
+from typing import Union, Dict, Type, Optional
 from .document import Document
+from .footer import FooterConfig
 from ..readers.base import BaseReader
 from ..writers.base import BaseWriter
 
@@ -18,13 +19,15 @@ class BaseConverter(ABC):
         self.writer = writer
 
     @abstractmethod
-    def convert(self, input_path: Union[str, Path], output_path: Union[str, Path]) -> None:
+    def convert(self, input_path: Union[str, Path], output_path: Union[str, Path],
+                footer_config: Optional[FooterConfig] = None) -> None:
         """
         Convert a document from input format to output format.
 
         Args:
             input_path: Path to input file
             output_path: Path to output file
+            footer_config: Optional footer configuration
         """
         pass
 
@@ -45,7 +48,8 @@ class BaseConverter(ABC):
 class DocumentConverter(BaseConverter):
     """Standard implementation of document converter."""
 
-    def convert(self, input_path: Union[str, Path], output_path: Union[str, Path]) -> None:
+    def convert(self, input_path: Union[str, Path], output_path: Union[str, Path],
+                footer_config: Optional[FooterConfig] = None) -> None:
         """Convert document from input to output format."""
         input_path = Path(input_path)
         output_path = Path(output_path)
@@ -62,8 +66,8 @@ class DocumentConverter(BaseConverter):
         # Read document
         document = self.reader.read(input_path)
 
-        # Write document
-        self.writer.write(document, output_path)
+        # Write document with footer config
+        self.writer.write(document, output_path, footer_config)
 
     def convert_to_string(self, input_path: Union[str, Path]) -> str:
         """Convert document and return as string."""
